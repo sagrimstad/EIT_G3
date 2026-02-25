@@ -7,9 +7,9 @@ from src.predict import predict_test_day
 
 """
 example usage:
-python scripts/predict_day.py \
+python -m scripts.predict_day \
   --model-dir artifacts/bergen_2023-04-01 \
-  --csv data/energy.csv \
+  --csv data/consumption_temp.csv \
   --location Bergen \
   --test-day 2023-04-01 \
   --last-complete-day 2023-04-01 \

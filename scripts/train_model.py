@@ -4,7 +4,7 @@ from src.train import train_for_test_day
 
 """
 example usage:
-python scripts/train_model.py \
+python -m scripts.train_model \
   --csv data/consumption_temp.csv \
   --location Bergen \
   --test-day 2023-04-01 \
@@ -35,7 +35,7 @@ def main():
 
     p.add_argument("--metric", default="mae", choices=["mae", "rmse", "smape"])
     p.add_argument("--top-k", type=int, default=3)
-    p.add_argument("--early-stopping-rounds", type=int, default=5000)
+    p.add_argument("--early-stopping-rounds", type=int, default=100)
 
     args = p.parse_args()
 
