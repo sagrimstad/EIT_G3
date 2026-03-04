@@ -33,11 +33,23 @@ The project primary utilizes:
 
 ## 📂 Project Structure
 ```text
-├── data/               # Raw and processed data (gitignored)
-├── notebooks/          # Exploratory Data Analysis (EDA) & Prototyping
-├── src/                # Production-ready Python scripts
-│   ├── preprocessing.py
-│   ├── train_model.py
-│   └── predict.py
-├── requirements.txt    # Python dependencies
+├── data/                     # Raw and processed data (gitignored)
+├── notebooks/                # EDA, prototyping, experiments
+├── artifacts/                # Saved models, metadata, tuning results (gitignored)
+├── outputs/                  # Predictions / evaluation outputs (gitignored)
+├── scripts/                  # CLI entrypoints
+│   ├── train_model.py        # Tune on validation window + train final model for one chosen test day
+│   └── predict_day.py        # Load trained model and predict one chosen day
+├── src/                      # Reusable production pipeline modules
+│   ├── __init__.py
+│   ├── utils.py              # Logging helpers
+│   ├── metrics.py            # MAE / RMSE / SMAPE
+│   ├── preprocessing.py      # Load, filter by location, parse timestamps
+│   ├── features.py           # Feature engineering (incl. delayed consumption features)
+│   ├── splits.py             # Build train/validation/test-day splits
+│   ├── modeling.py           # LightGBM model creation + fit/predict helpers
+│   ├── tuning.py             # Coarse + refine hyperparameter search on validation days
+│   ├── train.py              # End-to-end training pipeline (tune + final retrain)
+│   └── predict.py            # End-to-end prediction pipeline for one chosen day
+├── requirements.txt          # Python dependencies
 └── README.md
