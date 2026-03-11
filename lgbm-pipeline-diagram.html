@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGBM Forecasting Pipeline</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0B1221;
+    color: #E8ECF1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .pipeline-container {
+    width: 100%;
+    max-width: 1100px;
+    position: relative;
+  }
+
+  .title-block {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .title-block h1 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .title-block p {
+    font-size: 14px;
+    color: #7B8CA6;
+    font-weight: 400;
+  }
+
+  /* Main flow layout */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    position: relative;
+  }
+
+  /* Arrow connectors */
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .connector svg {
+    width: 40px;
+    height: 40px;
+    opacity: 0.5;
+  }
+
+  .connector .pulse-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(99,179,237,0.0), rgba(99,179,237,0.3), rgba(99,179,237,0.0));
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* Columns */
+  .col-inputs {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .col-model {
+    flex: 0.85;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .col-output {
+    flex: 0.85;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Section labels */
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    margin-bottom: 14px;
+    padding-left: 4px;
+  }
+
+  .label-input { color: #63B3ED; }
+  .label-model { color: #F6AD55; }
+  .label-output { color: #68D391; }
+
+  /* Feature cards */
+  .feature-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    border-radius: 3px 0 0 3px;
+  }
+
+  .feature-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.14);
+    transform: translateX(3px);
+  }
+
+  .card-calendar::before { background: #63B3ED; }
+  .card-weather::before { background: #9F7AEA; }
+  .card-history::before { background: #4FD1C5; }
+
+  .feature-card .card-icon {
+    font-size: 20px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .feature-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #E8ECF1;
+    margin-bottom: 4px;
+  }
+
+  .feature-card p {
+    font-size: 12px;
+    color: #7B8CA6;
+    line-height: 1.5;
+  }
+
+  .feature-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  .tag {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: #9EAFC4;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Model box */
+  .model-box {
+    background: linear-gradient(135deg, rgba(246,173,85,0.08), rgba(246,173,85,0.03));
+    border: 1px solid rgba(246,173,85,0.2);
+    border-radius: 18px;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+  }
+
+  .model-box::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(246,173,85,0.15), transparent);
+    z-index: -1;
+    filter: blur(20px);
+  }
+
+  .model-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(246,173,85,0.12);
+    border: 1px solid rgba(246,173,85,0.25);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    font-size: 26px;
+  }
+
+  .model-box h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #F6AD55;
+    margin-bottom: 4px;
+  }
+
+  .model-box .model-subtitle {
+    font-size: 12px;
+    color: #C4956E;
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+
+  .model-box p {
+    font-size: 12px;
+    color: #9EAFC4;
+    line-height: 1.6;
+  }
+
+  .model-detail {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 14px;
+    text-align: left;
+  }
+
+  .model-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #7B8CA6;
+    padding: 4px 0;
+  }
+
+  .model-detail-row .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #F6AD55;
+    flex-shrink: 0;
+  }
+
+  /* Output box */
+  .output-box {
+    background: linear-gradient(135deg, rgba(104,211,145,0.08), rgba(104,211,145,0.02));
+    border: 1px solid rgba(104,211,145,0.2);
+    border-radius: 18px;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+  }
+
+  .output-box::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(104,211,145,0.12), transparent);
+    z-index: -1;
+    filter: blur(20px);
+  }
+
+  .output-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(104,211,145,0.12);
+    border: 1px solid rgba(104,211,145,0.25);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    font-size: 26px;
+  }
+
+  .output-box h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #68D391;
+    margin-bottom: 4px;
+  }
+
+  .output-box .output-subtitle {
+    font-size: 12px;
+    color: #6EAF83;
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+
+  .output-box p {
+    font-size: 12px;
+    color: #9EAFC4;
+    line-height: 1.6;
+  }
+
+  /* Hour bars */
+  .hour-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 48px;
+    margin-top: 16px;
+    padding: 0 4px;
+    justify-content: center;
+  }
+
+  .hour-bar {
+    width: 6px;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(to top, rgba(104,211,145,0.3), rgba(104,211,145,0.7));
+    animation: barGrow 1.2s ease-out forwards;
+    transform-origin: bottom;
+  }
+
+  @keyframes barGrow {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+
+  .hour-label {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 9px;
+    color: #5A6E82;
+    padding: 0 2px;
+  }
+
+  /* Constraint badge */
+  .constraint-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(237, 100, 100, 0.08);
+    border: 1px solid rgba(237, 100, 100, 0.18);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 16px;
+    margin-bottom: 0;
+  }
+
+  .constraint-badge .badge-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .constraint-badge p {
+    font-size: 11px;
+    color: #C49E9E;
+    line-height: 1.4;
+  }
+
+  .constraint-badge strong {
+    color: #ED8A8A;
+  }
+
+  /* Per-area note */
+  .area-note {
+    text-align: center;
+    margin-top: 32px;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+  }
+
+  .area-note p {
+    font-size: 12px;
+    color: #7B8CA6;
+    line-height: 1.5;
+  }
+
+  .area-tags {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .area-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(99,179,237,0.08);
+    color: #63B3ED;
+    border: 1px solid rgba(99,179,237,0.15);
+  }
+</style>
+</head>
+<body>
+
+<div class="pipeline-container">
+
+  <div class="title-block">
+    <h1>Forecasting Pipeline Overview</h1>
+    <p>Day-ahead hourly energy consumption forecasting for Aneo</p>
+  </div>
+
+  <div class="flow">
+
+    <!-- INPUTS -->
+    <div class="col-inputs">
+      <div class="section-label label-input">Input Features</div>
+
+      <div class="feature-card card-calendar">
+        <span class="card-icon">📅</span>
+        <h3>Calendar Information</h3>
+        <p>When in time are we predicting for?</p>
+        <div class="feature-tags">
+          <span class="tag">Hour of day</span>
+          <span class="tag">Weekday / weekend</span>
+          <span class="tag">Month</span>
+          <span class="tag">Season</span>
+        </div>
+      </div>
+
+      <div class="feature-card card-weather">
+        <span class="card-icon">🌡️</span>
+        <h3>Weather Forecast</h3>
+        <p>Tomorrow's temperature predictions, available at forecast time</p>
+        <div class="feature-tags">
+          <span class="tag">Hourly temperature (°C)</span>
+          <span class="tag">Per location</span>
+        </div>
+      </div>
+
+      <div class="feature-card card-history">
+        <span class="card-icon">📊</span>
+        <h3>Historical Consumption</h3>
+        <p>Past consumption patterns the model can learn from</p>
+        <div class="feature-tags">
+          <span class="tag">7 days ago</span>
+          <span class="tag">14 days ago</span>
+          <span class="tag">Same weekday last week</span>
+        </div>
+      </div>
+
+      <div class="constraint-badge">
+        <span class="badge-icon">⚠️</span>
+        <p><strong>5-day data lag:</strong> Only consumption data from 5+ days ago is available at prediction time</p>
+      </div>
+    </div>
+
+    <!-- Arrow 1 -->
+    <div class="connector">
+      <div class="pulse-line"></div>
+      <svg viewBox="0 0 40 40" fill="none">
+        <path d="M8 20 L28 20 M22 14 L28 20 L22 26" stroke="#63B3ED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- MODEL -->
+    <div class="col-model">
+      <div class="section-label label-model">Model</div>
+
+      <div class="model-box">
+        <div class="model-icon">🌳</div>
+        <h3>LightGBM</h3>
+        <div class="model-subtitle">Gradient-Boosted Decision Trees</div>
+        <p>Learns patterns from thousands of historical examples by asking a series of simple questions about the inputs</p>
+
+        <div class="model-detail">
+          <div class="model-detail-row">
+            <span class="dot"></span>
+            <span>Hundreds of small decision trees work together</span>
+          </div>
+          <div class="model-detail-row">
+            <span class="dot"></span>
+            <span>Each tree corrects the mistakes of the previous ones</span>
+          </div>
+          <div class="model-detail-row">
+            <span class="dot"></span>
+            <span>Fast to train, lightweight to run daily</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow 2 -->
+    <div class="connector">
+      <div class="pulse-line"></div>
+      <svg viewBox="0 0 40 40" fill="none">
+        <path d="M8 20 L28 20 M22 14 L28 20 L22 26" stroke="#68D391" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="col-output">
+      <div class="section-label label-output">Output</div>
+
+      <div class="output-box">
+        <div class="output-icon">⚡</div>
+        <h3>24-Hour Forecast</h3>
+        <div class="output-subtitle">Predicted consumption (MW)</div>
+        <p>One value for each hour of the next day, generated every morning at 10:00</p>
+
+        <div class="hour-bars">
+          <div class="hour-bar" style="height:18px; animation-delay:0.0s"></div>
+          <div class="hour-bar" style="height:14px; animation-delay:0.03s"></div>
+          <div class="hour-bar" style="height:12px; animation-delay:0.06s"></div>
+          <div class="hour-bar" style="height:10px; animation-delay:0.09s"></div>
+          <div class="hour-bar" style="height:9px; animation-delay:0.12s"></div>
+          <div class="hour-bar" style="height:10px; animation-delay:0.15s"></div>
+          <div class="hour-bar" style="height:16px; animation-delay:0.18s"></div>
+          <div class="hour-bar" style="height:26px; animation-delay:0.21s"></div>
+          <div class="hour-bar" style="height:34px; animation-delay:0.24s"></div>
+          <div class="hour-bar" style="height:38px; animation-delay:0.27s"></div>
+          <div class="hour-bar" style="height:40px; animation-delay:0.30s"></div>
+          <div class="hour-bar" style="height:36px; animation-delay:0.33s"></div>
+          <div class="hour-bar" style="height:32px; animation-delay:0.36s"></div>
+          <div class="hour-bar" style="height:34px; animation-delay:0.39s"></div>
+          <div class="hour-bar" style="height:36px; animation-delay:0.42s"></div>
+          <div class="hour-bar" style="height:38px; animation-delay:0.45s"></div>
+          <div class="hour-bar" style="height:42px; animation-delay:0.48s"></div>
+          <div class="hour-bar" style="height:48px; animation-delay:0.51s"></div>
+          <div class="hour-bar" style="height:44px; animation-delay:0.54s"></div>
+          <div class="hour-bar" style="height:38px; animation-delay:0.57s"></div>
+          <div class="hour-bar" style="height:34px; animation-delay:0.60s"></div>
+          <div class="hour-bar" style="height:28px; animation-delay:0.63s"></div>
+          <div class="hour-bar" style="height:24px; animation-delay:0.66s"></div>
+          <div class="hour-bar" style="height:20px; animation-delay:0.69s"></div>
+        </div>
+        <div class="hour-label">
+          <span>00:00</span>
+          <span>12:00</span>
+          <span>23:00</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Per-area note -->
+  <div class="area-note">
+    <p>The model trains on data from all available Norwegian price areas</p>
+    <div class="area-tags">
+      <span class="area-tag">NO1</span>
+      <span class="area-tag">NO2</span>
+      <span class="area-tag">NO3</span>
+      <span class="area-tag">NO4</span>
+      <span class="area-tag">NO5</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
