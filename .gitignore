@@ -209,3 +209,8 @@ __marimo__/
 consumption_temp.csv
 artifacts/
 outputs/
+artifacts_or_notes/
+notebooks/experiments/
+img/
+.DS_Store
+.venv-pipeline/
