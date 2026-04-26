@@ -214,3 +214,4 @@ notebooks/experiments/
 img/
 .DS_Store
 .venv-pipeline/
+*.csv
