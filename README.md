@@ -10,4 +10,4 @@ Day-ahead hourly electricity consumption forecasting for five Norwegian price ar
 
 ## Data
 
-Place `consumption_temp.csv` in `data/`. The CSV is gitignored.
+Datafiles are not uploaded.
